@@ -1,0 +1,289 @@
+<html>
+  <head>
+
+    <title>Brutto-Netto-Rechner</title>
+
+    <meta name="description" content="This App calculates the Nettogehalt of a user based on the Bruttogehalt of the user and further information that the user enters in the user interface.">
+    <meta name="keywords" content="Brutto-Netto-Rechner, project, DHBW">
+
+    <!-- loading the alasql and Chart.js library from the lib directory -->
+    <script src="lib/alasql.min.js"></script>
+    <script src="lib/Chart.min.js"></script>
+
+    <!-- loading the application functions from the application JS file -->
+    <script src="webapp.js"></script>
+
+  </head>
+<body>
+  <h2>App Projekt: Brutto-Netto-Rechner</h2>
+  <form action="#">
+    <table>
+      <tr>
+        <td style="padding: 8px;">
+          <label for="brutto">Bruttogehalt in € <br> (bis 6000€)</label>
+        </td>
+        <td style="padding: 8px;">
+          <input type="number" name="brutto" id="brutto" min="0" max="6000" style="width: 80px;">
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <label for="klasse">Lohnsteuerklasse</label>
+        </td>
+        <td style="padding: 8px;">
+          <select name="klasse" id="klasse">
+            <option value="0">--Lohnsteuerklasse selektieren--</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+        </select>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <label for="alter">Alter</label>
+        </td>
+        <td style="padding: 8px;">
+          <input type="number" name="alter" id="alter" min="0" max="140" style="width: 80px;">
+        </td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <label for="kinder">Kinder</label>
+        </td>
+        <td style="padding: 8px;">
+          <label for="kinderja">Ja</label>
+          <input type="radio" name="kinder" id="kinderja">
+          <label for="kindernein" style="margin-left:20px;">Nein</label>
+          <input type="radio" name="kinder" id="kindernein">
+        </td>
+      </tr>
+    </table>
+
+    <input type="button" value="Rechnen" onclick="rechnen();" style="margin: 8px; background-color: #4CC417;">
+    <input type="button" value="Vergleichen" onclick="vergleichen();" style="margin: 8px; background-color: #79BAEC;">
+    <input type="button" value="Vergleichen zurücksetzen" onclick="resetComparison();" style="margin: 8px; background-color: #79BAEC;">
+    <input type="button" value="Daten löschen" onclick="deleteDatabase();" style="margin: 8px;background-color: #F75D59;">
+  
+  </form>
+
+  <h3>Ergebnis Nettogehalt</h3>
+  <div>
+    <span style="margin:4px;margin-right:10px;cursor:pointer;color:blue;" onclick="showChart();">Graphische Darstellung</span>
+    <span style="margin:4px;margin-left:10px;cursor:pointer;color:blue;" onclick="showData();">Daten zeigen</span>
+  </div>
+  <div width="100%">
+    <table id="tabelle" style="float: left; display: block; margin-bottom:20px;">
+      <tr>
+        <td style="padding: 8px;">
+          Lohnsteuerklasse:
+        </td>
+        <td style="padding: 8px;">
+          <span id="lsk"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Kinder:
+        </td>
+        <td style="padding: 8px;">
+          <span id="kinderValue"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Alter:
+        </td>
+        <td style="padding: 8px;">
+          <span id="alterValue"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <h3>Bruttogehalt:</h3>
+        </td>
+        <td style="padding: 8px;">
+          <h4><span id="bruttogehalt">0</span> €</h4>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <h3>Nettogehalt:</h3>
+        </td>
+        <td style="padding: 8px;">
+        <h4><span id="nettogehalt">0</span> €</h4>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Lohnsteuerbetrag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="lohnsteuerbetrag">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Kirchensteuer:
+        </td>
+        <td style="padding: 8px;">
+          <span id="kirchensteuer">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Solidaritaetszuschlag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="solidaritaetszuschlag">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Krankenkassenbeitrag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="krankenkassenbeitrag">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Pflegeversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="pflegeversicherung">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Arbeitslosenversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="arbeitslosenversicherung">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Rentenversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="rentenversicherung">0</span> €
+      </tr>
+    </table>
+    <table id="tabelle2" style="display: none; margin-left:120px; margin-bottom:20px;">
+      <tr>
+        <td style="padding: 8px;">
+          Lohnsteuerklasse:
+        </td>
+        <td style="padding: 8px;">
+          <span id="lsk2"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Kinder:
+        </td>
+        <td style="padding: 8px;">
+          <span id="kinderValue2"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Alter:
+        </td>
+        <td style="padding: 8px;">
+          <span id="alterValue2"></span>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <h3>Bruttogehalt:</h3>
+        </td>
+        <td style="padding: 8px;">
+          <h4><span id="bruttogehalt2">0</span> €</h4>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          <h3>Nettogehalt:</h3>
+        </td>
+        <td style="padding: 8px;">
+        <h4><span id="nettogehalt2">0</span> €</h4>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Lohnsteuerbetrag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="lohnsteuerbetrag2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Kirchensteuer:
+        </td>
+        <td style="padding: 8px;">
+          <span id="kirchensteuer2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Solidaritaetszuschlag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="solidaritaetszuschlag2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Krankenkassenbeitrag:
+        </td>
+        <td style="padding: 8px;">
+          <span id="krankenkassenbeitrag2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Pflegeversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="pflegeversicherung2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Arbeitslosenversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="arbeitslosenversicherung2">0</span> €
+      </tr>
+      <tr>
+        <td style="padding: 8px;">
+          Rentenversicherung:
+        </td>
+        <td style="padding: 8px;">
+          <span id="rentenversicherung2">0</span> €
+      </tr>
+    </table>
+    <div id="chartDiv" style="width:500px; height:500px; float: left; display: none;margin-bottom:20px;">
+      <canvas id="chart" width="500px" height="500px" ></canvas>
+    </div>
+    <BR><BR>
+  <script>
+    /**
+     * WebApp to calculate the Nettogehalt from data given by the user in a HTML form.
+     * Records are kept in an in-browser SQL database. Currently 2 records are kept. One as the
+     * primary data set, the second as a data set for tax comparison. 
+     * 
+     * This project uses the in-browser SQL database alasql to store user input information as
+     * well as results of calculations and retrieve the last given information when the user starts the app.
+     * The database created with alasql is persisted in the browser's localStorage and thus keep its data
+     * over a page refresh. See http://alasql.org/ for documentation.
+     * 
+     * This project uses Chart.js for displaying data in a doughnut chart.
+     * See https://www.chartjs.org/ for documentation.
+     */
+
+    
+    // First, create the database and tables for storing and retrieving the data.
+    // This is run once when the page is loaded.
+    createDatabase();
+
+    
+    /**
+     * Fill the data is some data is already in the database.
+     * Read the data from the database and fill up the user interface for nummer with 1 and 2
+     * for the primary selection and the selection for comparison.
+     * This is run once each time the web page is (re)loaded 
+     */
+    showDatafromDBInUserInterface(1);
+    showDatafromDBInUserInterface(2);
+    // the chart shows the 2 data record in one chart if available
+    showDataInChart(2);
+
+  </script>
+
+</body>
+</html>
