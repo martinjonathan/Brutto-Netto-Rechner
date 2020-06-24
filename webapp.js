@@ -6,10 +6,11 @@
 /**
  * variable to toggle view of chart vs view of tables
  */
-let chartDisplay = false;
+let chartDisplay = false; /** chart display Variable wird global zur Verfügung gestellt, wird verwendet, um zu merken, was aktuell dargestellt wird (Tabelle oder Graphisch)) wenn true --> graphisch wenn false --> tabelle
+                            an dieser Stelle false damit wenn die Datei geladen wird der Chart nicht angezeigt wird */
 
 /**
- *  constant values used for the calculations
+ *  constant values used for the calculations = Variablen Wert kann nicht geändert werden 
  */
 const KIRCHENSTEUER_SATZ = 0.09;
 const SOLI_SATZ = 0.055;
@@ -40,11 +41,12 @@ const RENTENVERSICHERUNG_SATZ = 0.093;
  * The database and tables is created only once.
  * It uses localStorage to store the database for keeping data over a page refresh.
  */ 
-const createDatabase = function() {
-  alasql('CREATE localStorage DATABASE IF NOT EXISTS db');
-  alasql('ATTACH localStorage DATABASE db');
-  alasql('USE db');
-  alasql(`CREATE TABLE IF NOT EXISTS gehalt (
+const createDatabase = function() { /** alasql Schnittstelle - führt SQL aus, da Library implementiert ist, In Memory oder Local Storage wird erzeugt 
+                                      Alasql benutzt Browserschnittstellen um Daten im Local Storage zu speichern --> hier wird DB im Local Storage wird erzeugt */
+  alasql('CREATE localStorage DATABASE IF NOT EXISTS db'); /** falls die DB nicht vorhanden ist --> erzeuge diese */
+  alasql('ATTACH localStorage DATABASE db'); /** wird benötigt um DB im Local Storage zu speichern  */
+  alasql('USE db'); /** alle SQL Befehle werden in Bezug auf die erzeugte DB ausgeführt  --> Tabelle Gehalt muss erzeugt werden s. nächste Funktion, ``multiline String um SQL sichtbarer zu schreiben */
+  alasql(`CREATE TABLE IF NOT EXISTS gehalt ( 
     nummer INT PRIMARY KEY,
     age INT,
     lohnsteuerklasse INT,
@@ -69,12 +71,12 @@ const createDatabase = function() {
  * 
  *  the table.
  */
-const deleteDatabase = function() {
+const deleteDatabase = function() { /** Datenbank Löschfunktion, DB ist im Local Storage, deswegen Drop localstorage, nachdem DB gelöscht wurde muss die Datenbank neu erzeugt werden  */
     // drop the DB and create it right away again
     alasql('DROP localStorage DATABASE db');
     createDatabase();
     
-    // reset all fields in UI
+    // reset all fields in UI --> Alle Felder in Tabelle 1 und 2  müssen nach Löschung auf 0 gesetzt werden, nachdem alle Elemente auf 0 gesetzt wurden, wird Chart neu aufgesetzt
     document.getElementById("lsk").innerHTML = 0;
     document.getElementById("kinderValue").innerHTML = 0;
     document.getElementById("alterValue").innerHTML = 0;
@@ -100,8 +102,8 @@ const deleteDatabase = function() {
     document.getElementById("rentenversicherung2").innerHTML = 0;
     document.getElementById("nettogehalt2").innerHTML = 0;
     const ctx = document.getElementById('chart').getContext("2d");
-    const doughnutChart = new Chart(ctx, {
-      type: 'doughnut',
+    const doughnutChart = new Chart(ctx, { /** hier wird neuer Chart erzeugt und alter Chart ersetzt --> ctx ist canvas Tag/Objekt  (oben drüber wird es definiert)*/
+      type: 'doughnut',                     /** Chart.js schnittstelle zur lib */
       data: {
         datasets: [{}],
         labels: [],
@@ -117,7 +119,7 @@ const deleteDatabase = function() {
       }
     });
     // hide comparison table
-    document.getElementById('tabelle2').style.display = 'none';
+    document.getElementById('tabelle2').style.display = 'none'; /** da es keine Daten gibt, da es keinen Vergleich mehr gibt, wird Tabelle 2 unsichtbar gemacht */
 
 
 }
@@ -136,7 +138,7 @@ const lohnsteuersatz = function(bruttoGehalt, lohnsteuerKlasse) {
     alert("Keine Berechnung aktuell möglich; diese App hat Information über Lohnsteuersätze bis 6000 €");
     return -1;
   }
-  if (bruttoGehalt <= 1199.99) {
+  if (bruttoGehalt <= 1199.99) {     
     switch (lohnsteuerKlasse) {
       case 1:
       case 2:
@@ -271,25 +273,25 @@ const lohnsteuersatz = function(bruttoGehalt, lohnsteuerKlasse) {
  */
 function nettoBerechnen(nummer) {
       // get Bruttogehalt and Lohnsteuerklasse from HTML input fields
-      const brutto = Number(document.getElementById("brutto").value);
+      const brutto = Number(document.getElementById("brutto").value);    
       const alter = Number(document.getElementById("alter").value);
       const element = document.getElementById("klasse");
-      const lohnsteuerKlasse = parseInt(element.options[element.selectedIndex].value, 10);
-      const kinder = document.getElementById("kinderja").checked;
+      const lohnsteuerKlasse = parseInt(element.options[element.selectedIndex].value, 10); 
+      const kinder = document.getElementById("kinderja").checked; /** Radiobutton - true oder false */ 
 
-      // check if the Lohnsteuerklasse has been selected. If not, its value is 0.
+      // check if the Lohnsteuerklasse has been selected. If not, its value is 0. gibt einen Hinweis aus und macht ncihts weiteres
       if (lohnsteuerKlasse === 0) {
         alert ("Bitte, geben sie die Lohnsteuerklasse ein.")
         return;
       }
 
       // check if the given Bruttogehalt is a number. If not return without doing anything
-      if (Number.isNaN(brutto)) {
+      if (Number.isNaN(brutto)) { 
         alert ("Das eingegebene Bruttogehalt ist keine Zahl. Bitte, korrigieren Sie das Bruttogehalt.")
         return;
       }
 
-      // check if the given age is an integer
+      // check if the given age is an integer if not return with doing anything
       if (!Number.isInteger(alter)) {
         alert ("Das eingegebene Alter ist falsch. Bitte, korrigieren Sie das Alter.")
         return;
@@ -330,9 +332,10 @@ function nettoBerechnen(nummer) {
       const netto = brutto - lohnsteuerbetrag - kirchensteuer - solidaritaetszuschlag - krankenkassenbeitrag
         - pflegeversicherung - arbeitslosenversicherung - rentenversicherung;
 
-      // Store the data in the database
+      // Store the data in the database, erstmal wird geprüft, ob es ein Eintrag gibt (IF EXISTS), falls ja update die DB mit den neuen Werten, falls nein werden die Werte hinzugefügt mit Insert, Durch ${...} fügt den Wert der Variable hinzu
+      
       const sql = `
-        IF EXISTS (SELECT * FROM gehalt WHERE nummer = ${nummer})
+        IF EXISTS (SELECT * FROM gehalt WHERE nummer = ${nummer}) 
           UPDATE gehalt SET 
             age = ${alter},
             lohnsteuerklasse = ${lohnsteuerKlasse},
@@ -364,7 +367,7 @@ function nettoBerechnen(nummer) {
             ${netto}
           )
       `;
-      alasql(sql);
+      alasql(sql); /** Befehl um Alasql Datenbank zu füllen / updaten (Schnittstelle der Library) */
 
 
 }
@@ -377,12 +380,12 @@ function nettoBerechnen(nummer) {
  * s the data of a comparison if any available.
  */
 function rechnen() {
-  // calculate new primary values and store them in the DB
+  // calculate new primary values and store them in the DB unter Nummer 1, Was soll passieren wenn Rechnen geklickt wird? Eventhandler ausführen
   nettoBerechnen(1);
-  // show the data in the user interface
+  // show the data in the user interface,
   showDatafromDBInUserInterface(1);
 
-  // show data in chart -- if comparison data is there, both datasets must be shown
+  // show data in chart -- if comparison data is there, both datasets must be shown, gibt es 2 Datensätze mit "SELECT ... nummer = 2" ist das Array leer, oder hat einen Eintrag --> Chart muss beide zeigen oder nur einen
   const data = alasql('SELECT * FROM gehalt WHERE nummer = 2');
   const toShow = data && data.length === 1 ? 2 : 1;
   showDataInChart(toShow);
@@ -394,7 +397,8 @@ function rechnen() {
  * It checks if data is already available in the primary record. If no data
  * is available an alert is sent and it does nothing more.
  * and stores the new data in the secondary record for comparison.
- */
+   Funktion Vergleichen --> gibt es einen ersten Wert? Select Statement auf Nummer = 1 um zu wissen, ob Nummer 1 schon da ist, wenn nicht, dann kommt ein Alert und macht nichts
+   Wenn es einen Eintrag gibt, macht es weiter und macht dasselbe wie die Funktion "Rechnen" nur für Ergebnis 2, schreibt sowohl in Tabelle 1 (mit den Werten von Rechnen) und Tabelle 2 (mit den Werten von Vergleichen) und im Chart         */
 function vergleichen() {
   // first check if data is already there for comparison
   const data = alasql('SELECT * FROM gehalt WHERE nummer = 1');
@@ -415,7 +419,7 @@ function vergleichen() {
  *  the comparison:
  *  - hide the table where the result is shown
  *  - remove the record for the comparison from the database
- */
+  Funktion Vergleichen zurücksetzen --> Vergleich wird zurückgesetzt (Tabelle 2 wird versteckt) und Chart muss neu berechnet/gerendert werden und nur Wert von Rechnen wird im Chart angezeigt  */
 function resetComparison() {
   // hide table
   document.getElementById('tabelle2').style.display = 'none';
@@ -444,23 +448,24 @@ function resetComparison() {
  *  rentenversicherung
  *  netto
  * } 
+ Daten werden in Tabelle angezeigt. Übergeben der Records 1 oder 2 je nachdem was gezeigt werden möchte, Tabelle 1 wird aus Record 1 gefüllt, Tabelle 2 wird aus Record 2 gefüllt
  */
 function showDatafromDBInUserInterface(nummer) {
-  const currentData = alasql(`SELECT * FROM gehalt WHERE nummer = ${nummer}`);
+  const currentData = alasql(`SELECT * FROM gehalt WHERE nummer = ${nummer}`); /** Select Statement liefert immer Array zurück */
   // show the data read from the DB in the user interface.
   // The result of the SELECT statement is an array and since we know we have one record at most
   // we take the first record found if any.
   // If no record is found, do nothing.
   if (!currentData || currentData.length < 1) {
-    return;
+    return; /** kein Record wurde gefunden, Funktion tut nichts */
   }
-  const data = currentData[0];
-  console.log('nummer, data', nummer, data);
+  const data = currentData[0]; /** wenn es ein Element gibt, gibt es nur eins, da Nummer Primary Key ist */ 
+  
 
-  // Display the values
+  // Display the values, wenn oben Nummer 1 --> Tabelle 1 wird gefüllt, wenn Nummer 2 --> Tabelle 2 wird gefüllt
   if (nummer === 1) {
-    console.log('data', data);
-    // fields for the primary calculation
+        // fields for the primary calculation, Nach 2 Dezimalstellen wird gecuttet, Werte werden in spezifischer Tabelle angezeigt
+        
     document.getElementById("lsk").innerHTML = data.lohnsteuerklasse;
     document.getElementById("kinderValue").innerHTML = data.kinder ? 'Ja' : 'Nein';
     document.getElementById("alterValue").innerHTML = data.age;
@@ -488,8 +493,9 @@ function showDatafromDBInUserInterface(nummer) {
     document.getElementById("rentenversicherung2").innerHTML = data.rentenversicherung.toFixed(2);
     document.getElementById("nettogehalt2").innerHTML = data.netto.toFixed(2);
     // show table for comparison
-    if (!chartDisplay) {
-      document.getElementById('tabelle2').style.display = 'block';
+    /** Im Anschluss: wenn Chartdisplay false ist, wird Tabelle 2 gezeigt */
+        if (!chartDisplay) {
+        document.getElementById('tabelle2').style.display = 'block'; 
     }
   }  
 }
@@ -513,11 +519,11 @@ function showDatafromDBInUserInterface(nummer) {
  *  rentenversicherung
  *  netto
  * } 
- */
+ Möchte ich Record 1 anzeigen oder Record 1 und 2? + Reihenfolge definieren --> 1. Eintrag im Array = 1. Eintrag in Tabelle*/
 function showDataInChart(nummer) {
   const currentData = nummer === 1 
     ? alasql(`SELECT * FROM gehalt WHERE nummer = 1`)
-    : alasql(`SELECT * FROM gehalt WHERE nummer = 1 OR nummer = 2`);
+    : alasql(`SELECT * FROM gehalt WHERE nummer = 1 OR nummer = 2 ORDER BY nummer`);
   // show the data read from the DB in the user interface.
   // The result of the SELECT statement is an array and since we know we have one record at most
   // we take the first record found if any.
@@ -525,10 +531,19 @@ function showDataInChart(nummer) {
   if (!currentData || currentData.length < 1) {
     return;
   }
-  const inputData = currentData[0];
-  const comparisonData = nummer === 2 && currentData[1] ? currentData[1] : null;
+  const inputData = currentData[0]; /** Gibt es einen 2. Eintrag im Array? Wert wird geholt um in Chart zu setzen.  */
+  const comparisonData = (nummer === 2 && currentData.length === 2) ? currentData[1] : null;
 
-  console.log('nummer, inputData', nummer, inputData);
+  /** Konfiguration für den Chart, Labels müssen berechnet werden, Farben müssen aufgeführt werden usw. 
+   * Was benötigt Chart.js um die Charts anzuzeigen? Chart.js Dokumentation anschauen!!
+   * Keys: Werte, die man im Chart anzeigen lassen möchte von der Datenbank
+   * Arrays der Lables, Werte, Vergleichwerte werden gebaut
+   * Key.forEach: Iteriert über alle Keys und wird für jeden Key ausgeführt
+   * Values: inputData --> Alle berechneten Daten aus der Datenbank "Lohnsteuerbetrag, Kirchensteuer usw usw"
+   * Comparisondata: Wenn es ein Objekt ist und Werte für den Vergleich enthält, werden die Werte in der Reihenfolge (Lohnsteuerbetrag, Kirchensteuer usw) im Array eingefügt, falls null ist, wird nichts gemacht
+   * Dataset Array: Farbinformationen für den Chart --> Farbreihenfolge immer gleich hard codiert--> Kirchensteuer wird bspw. immer Lila sein 
+   * 
+  */
   const keys = [
     'lohnsteuerbetrag',
     'kirchensteuer',
@@ -610,7 +625,7 @@ const capitalize = (s) => {
 }
 
 /**
- * function to show the HTML element containing the chart and hide the data
+ * function to show the HTML element containing the chart and hide the data --> Element Graph anzeigen wenn man drückt, Tabelle wird versteckt
  */
 function showChart() {
   document.getElementById('tabelle').style.display = 'none';
@@ -620,7 +635,8 @@ function showChart() {
 }
 
 /**
- * function to show the HTML element containing the data and hide the chart 
+ * function to show the HTML element containing the data and hide the chart --> Element Tabelle anzeigen, wenn gedrückt wird
+ * Soll 1 oder 2 Tabelle dargestellt werden? Gibt es 2 Einträge? Wenn ja wird Tabelle 1 und 2 angezeigt, wenn 2. Record in Datenbank nicht gefüllt, wird nur Tabelle 1 angezeigt
  */
 function showData() {
   const isComparison = alasql(`SELECT * FROM gehalt WHERE nummer = 2`);

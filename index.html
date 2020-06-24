@@ -7,11 +7,12 @@
     <meta name="keywords" content="Brutto-Netto-Rechner, project, DHBW">
 
     <!-- loading the alasql and Chart.js library from the lib directory -->
-    <script src="lib/alasql.min.js"></script>
+    <script src="lib/alasql.min.js"></script> <!-- (minimierte Versionen werden schneller geladen, performanter) minimierte Libraries werden durch Javascript Funktionen aufgerufen -->
     <script src="lib/Chart.min.js"></script>
 
     <!-- loading the application functions from the application JS file -->
-    <script src="webapp.js"></script>
+    <script src="webapp.js"></script> <!-- Javascript Dateien werden vor allem anderen geladen, bevor die Seite geladen hat, da im Header. 
+                                      Javascript Funktionen werden hier aufgerufen, global nutzbar (in jedem Eventhandler, Scripttag) -->
 
   </head>
 <body>
@@ -20,7 +21,7 @@
     <table>
       <tr>
         <td style="padding: 8px;">
-          <label for="brutto">Bruttogehalt in € <br> (bis 6000€)</label>
+          <label for="brutto">monatliches Bruttogehalt in € <br> (bis 6000€)</label>
         </td>
         <td style="padding: 8px;">
           <input type="number" name="brutto" id="brutto" min="0" max="6000" style="width: 80px;">
@@ -31,7 +32,7 @@
         </td>
         <td style="padding: 8px;">
           <select name="klasse" id="klasse">
-            <option value="0">--Lohnsteuerklasse selektieren--</option>
+            <option value="0">--Lohnsteuerklasse selektieren--</option> // <!--lohnsteuerklasse -->
             <option value="1">1</option>
             <option value="2">2</option>
             <option value="3">3</option>
@@ -51,7 +52,7 @@
       </tr>
       <tr>
         <td style="padding: 8px;">
-          <label for="kinder">Kinder</label>
+          <label for="kinder">Kinder</label>      <!--Kinder -->
         </td>
         <td style="padding: 8px;">
           <label for="kinderja">Ja</label>
@@ -62,20 +63,21 @@
       </tr>
     </table>
 
-    <input type="button" value="Rechnen" onclick="rechnen();" style="margin: 8px; background-color: #4CC417;">
+    <input type="button" value="Rechnen" onclick="rechnen();" style="margin: 8px; background-color: #4CC417;">   
     <input type="button" value="Vergleichen" onclick="vergleichen();" style="margin: 8px; background-color: #79BAEC;">
     <input type="button" value="Vergleichen zurücksetzen" onclick="resetComparison();" style="margin: 8px; background-color: #79BAEC;">
     <input type="button" value="Daten löschen" onclick="deleteDatabase();" style="margin: 8px;background-color: #F75D59;">
-  
+      <!-- on click (Eventhandler) triggert die Ausführung der jeweiligen Js Funktionen bei Knopfdruck-->
+
   </form>
 
   <h3>Ergebnis Nettogehalt</h3>
   <div>
-    <span style="margin:4px;margin-right:10px;cursor:pointer;color:blue;" onclick="showChart();">Graphische Darstellung</span>
-    <span style="margin:4px;margin-left:10px;cursor:pointer;color:blue;" onclick="showData();">Daten zeigen</span>
+    <span style="margin:4px;margin-right:10px;cursor:pointer;color:blue;" onclick="showChart();">Graphische Darstellung</span> <!-- zeigt Chart und versteckt Tabelle-->
+    <span style="margin:4px;margin-left:10px;cursor:pointer;color:blue;" onclick="showData();">Daten zeigen</span> <!-- zeigt Tabelle und versteckt Chart-->
   </div>
   <div width="100%">
-    <table id="tabelle" style="float: left; display: block; margin-bottom:20px;">
+    <table id="tabelle" style="float: left; display: block; margin-bottom:20px;"> <!-- Bei drücken auf "Rechnen" enthält die Tabelle alle Berechnungsergebnisse-->
       <tr>
         <td style="padding: 8px;">
           Lohnsteuerklasse:
@@ -161,7 +163,10 @@
           <span id="rentenversicherung">0</span> €
       </tr>
     </table>
-    <table id="tabelle2" style="display: none; margin-left:120px; margin-bottom:20px;">
+    <table id="tabelle2" style="display: none; margin-left:120px; margin-bottom:20px;"> <!-- Tabelle 2 wird für den Vergleich benutzt, 2. Nettogehalt wird berechnet 
+                                                                                          und in dieser Tabelle angezeigt, falls auf Vergleichen geklickt wird und noch kein Ergebnis in Tabelle 1 
+                                                                                        ist, wird gewartet bis auf Rechnen geklickt wird
+                                                                                      Tabelle ist erst unsichtbar im css-style, wird nicht gerendert bis Nutzer auf Vergleich klickt-->
       <tr>
         <td style="padding: 8px;">
           Lohnsteuerklasse:
@@ -247,11 +252,11 @@
           <span id="rentenversicherung2">0</span> €
       </tr>
     </table>
-    <div id="chartDiv" style="width:500px; height:500px; float: left; display: none;margin-bottom:20px;">
+    <div id="chartDiv" style="width:500px; height:500px; float: left; display: none;margin-bottom:20px;"> <!--Chart erstmal unsichtbar -->
       <canvas id="chart" width="500px" height="500px" ></canvas>
     </div>
     <BR><BR>
-  <script>
+  <script> /** Javascript Tag, wird nur einmal ausgeführt, alles andere passiert durch Eventhandler, bei jedem Klick wird eine JS Funktion ausgeführt */ 
     /**
      * WebApp to calculate the Nettogehalt from data given by the user in a HTML form.
      * Records are kept in an in-browser SQL database. Currently 2 records are kept. One as the
@@ -261,6 +266,8 @@
      * well as results of calculations and retrieve the last given information when the user starts the app.
      * The database created with alasql is persisted in the browser's localStorage and thus keep its data
      * over a page refresh. See http://alasql.org/ for documentation.
+     * 
+     * API einfach zu nutzen, wenn man sich online umschaut findet man als SQL Datenbank nicht wirklich etwas anderes um lokal im Browser zu verwenden
      * 
      * This project uses Chart.js for displaying data in a doughnut chart.
      * See https://www.chartjs.org/ for documentation.
@@ -278,10 +285,10 @@
      * for the primary selection and the selection for comparison.
      * This is run once each time the web page is (re)loaded 
      */
-    showDatafromDBInUserInterface(1);
-    showDatafromDBInUserInterface(2);
+    showDatafromDBInUserInterface(1); /** Daten werden aus der Datenbank gelesen und in der Tabelle eingetragen 1 und 2 da es 2 Berechnungen geben kann für Vergleich 1 für Tabelle 1 und 2 für Tabelle 2*/
+    showDatafromDBInUserInterface(2); /** klicken auf Rechnen wird nur in Tabelle 1 gezeigt, klicken auf Vergleich wird nur in Tabelle 2 gezeigt */
     // the chart shows the 2 data record in one chart if available
-    showDataInChart(2);
+    showDataInChart(2); /** lädt Daten in den Chart aber zeigt den Chart nicht an, Chart Element ist schon da, nur unsichtbar und wird vom Browser nicht gerendert, Daten werden hiermit gefüllt */
 
   </script>
 
